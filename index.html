@@ -5,25 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Rotina</title>
+    <title>Phantom Life</title>
     
-    <!-- Ligações para o PWA (Manifest e Ícone) -->
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/192/0A84FF/FFFFFF?text=R">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192/0A84FF/FFFFFF?text=P">
     
     <style>
-        /* Variáveis de Cores - Tema Claro (Padrão) */
+        /* Variáveis de Cores (Estilo iOS) */
         :root {
-            --bg-color: #F2F2F7;
+            --bg-color: #FFFFFF;
             --card-bg: #FFFFFF;
-            --text-main: #000000;
+            --text-main: #1C1C1E;
             --text-muted: #8E8E93;
             --accent: #0A84FF;
             --danger: #FF3B30;
             --separator: rgba(60,60,67,0.15);
+            --icon-bg: #F2F2F7;
+            --nav-bg: #FFFFFF;
+            --nav-border: rgba(60,60,67,0.15);
         }
 
-        /* Variáveis de Cores - Tema Escuro Automático (Dark Mode) */
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #000000;
@@ -31,348 +32,79 @@
                 --text-main: #FFFFFF;
                 --text-muted: #EBEBF599;
                 --separator: rgba(84,84,88,0.3);
+                --icon-bg: #1C1C1E; 
+                --nav-bg: #111111;
+                --nav-border: rgba(84,84,88,0.3);
             }
         }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent; /* Remove o brilho ao tocar no ecrã */
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            /* Proteção para a "Ilha Dinâmica" e o entalhe do iPhone */
             padding-top: env(safe-area-inset-top, 40px);
-            padding-bottom: env(safe-area-inset-bottom, 20px);
+            padding-bottom: calc( env(safe-area-inset-bottom, 20px) + 70px ); 
             user-select: none;
             -webkit-user-select: none;
-            transition: background-color 0.3s;
+            overflow-x: hidden;
+            height: 100vh;
         }
 
-        /* Cabeçalho */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px 8px;
+        /* Gestão de Visualizações */
+        .app-view { display: none; width: 100%; height: 100%; overflow-y: auto; position: absolute; top: env(safe-area-inset-top, 40px); left: 0; padding-bottom: 70px; }
+        .app-view.active { display: block; animation: fadeIn 0.3s ease-out; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
+
+        /* ========= HOMESCREEN ========= */
+        #homescreen-view {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 34px;
-            font-weight: 700;
-            letter-spacing: 0.37px;
-        }
+        .welcome-header { text-align: center; margin-bottom: 60px; padding: 0 20px; }
+        .welcome-header h1 { font-size: 34px; font-weight: 700; margin: 0; }
+        .welcome-header p { font-size: 24px; font-weight: 600; color: var(--accent); margin: 5px 0 0; }
 
-        .actions {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+        .app-grid { display: grid; grid-template-columns: repeat(2, 120px); gap: 40px; justify-content: center; }
 
-        .add-btn {
-            background: none;
-            border: none;
-            color: var(--accent);
-            font-size: 32px;
-            font-weight: 300;
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-        }
-
-        .edit-toggle {
-            color: var(--accent);
-            font-size: 17px;
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-        }
-
-        /* Lista de Tarefas */
-        .task-list {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            margin: 16px 20px;
-            overflow: hidden;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .task-item {
-            display: flex;
-            align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid var(--separator);
-            transition: background-color 0.2s;
-        }
-
-        .task-item:last-child {
-            border-bottom: none;
-        }
-
-        .task-item:active {
-            background-color: rgba(142, 142, 147, 0.1);
-        }
-
-        /* Checkbox estilo Apple */
-        .checkbox {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border: 2px solid var(--text-muted);
-            margin-right: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            transition: 0.2s;
-        }
-
-        .task-item.done .checkbox {
-            background-color: var(--accent);
-            border-color: var(--accent);
-        }
-
-        .task-item.done .checkbox::after {
-            content: '';
-            width: 6px;
-            height: 12px;
-            border: solid white;
-            border-width: 0 2px 2px 0;
-            transform: rotate(45deg);
-            margin-bottom: 3px;
-        }
-
-        .task-text {
-            font-size: 17px;
-            flex-grow: 1;
-            transition: 0.2s;
-            color: var(--text-main);
-        }
-
-        .task-item.done .task-text {
-            color: var(--text-muted);
-            text-decoration: line-through;
-        }
-
-        /* Botão de Apagar (Aparece no Modo Edição) */
-        .delete-btn {
-            background: var(--danger);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-left: 10px;
-            display: none;
-        }
-
-        .edit-mode .delete-btn {
-            display: block;
-            animation: fadeIn 0.2s;
-        }
-
-        .edit-mode .checkbox {
-            display: none;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* Ecrã flutuante para adicionar nova tarefa */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.4);
-            display: flex;
-            align-items: flex-end;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 100;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal-content {
-            background-color: var(--card-bg);
-            width: 100%;
-            border-radius: 12px 12px 0 0;
-            padding: 20px;
-            padding-bottom: calc(20px + env(safe-area-inset-bottom, 20px));
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .modal-overlay.active .modal-content {
-            transform: translateY(0);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-
-        .modal-header span {
-            font-size: 17px;
-        }
-
-        .modal-header button {
-            background: none;
-            border: none;
-            color: var(--accent);
-            font-size: 17px;
-            font-weight: 600;
-            padding: 0;
-        }
-
-        .modal-input {
-            width: 100%;
-            padding: 16px;
-            background-color: var(--bg-color);
-            border: none;
-            border-radius: 10px;
-            font-size: 17px;
-            color: var(--text-main);
-            outline: none;
-        }
+        .app-icon-group { display: flex; flex-direction: column; align-items: center; cursor: pointer; text-decoration: none; border: none; background: none; padding: 0; }
         
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-muted);
-            font-size: 17px;
+        .app-icon {
+            width: 80px; height: 80px;
+            border-radius: 18px;
+            background-color: var(--icon-bg);
+            border: 2px solid var(--separator);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 36px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <h1>Rotina</h1>
-        <div class="actions">
-            <button class="edit-toggle" id="editToggle" onclick="toggleEditMode()">Editar</button>
-            <button class="add-btn" onclick="openModal()">+</button>
-        </div>
-    </div>
-
-    <div class="task-list" id="taskList">
-        <!-- As tarefas aparecem aqui -->
-    </div>
-
-    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <button onclick="closeModal()" style="color: var(--text-muted); font-weight: 400;">Cancelar</button>
-                <span>Nova Tarefa</span>
-                <button onclick="addTask()">Salvar</button>
-            </div>
-            <input type="text" class="modal-input" id="taskInput" placeholder="Ex: Ler 10 páginas" autocomplete="off">
-        </div>
-    </div>
-
-    <script>
-        // Lógica do Aplicativo
-        let tasks = JSON.parse(localStorage.getItem('ios_routine_tasks')) || [];
-        let isEditMode = false;
-
-        const taskListEl = document.getElementById('taskList');
-        const modalOverlay = document.getElementById('modalOverlay');
-        const taskInput = document.getElementById('taskInput');
-        const editToggle = document.getElementById('editToggle');
-
-        function render() {
-            if (tasks.length === 0) {
-                taskListEl.innerHTML = '<div class="empty-state">Sua rotina está vazia.<br>Toque no <b>+</b> para começar.</div>';
-                taskListEl.style.backgroundColor = 'transparent';
-                taskListEl.style.boxShadow = 'none';
-                editToggle.style.display = 'none';
-                return;
-            }
-
-            taskListEl.style.backgroundColor = 'var(--card-bg)';
-            taskListEl.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
-            editToggle.style.display = 'block';
-
-            taskListEl.innerHTML = tasks.map((task, index) => `
-                <div class="task-item ${task.done ? 'done' : ''} ${isEditMode ? 'edit-mode' : ''}" onclick="!isEditMode && toggleTask(${index})">
-                    <div class="checkbox"></div>
-                    <div class="task-text">${task.text}</div>
-                    <button class="delete-btn" onclick="event.stopPropagation(); deleteTask(${index})">Apagar</button>
-                </div>
-            `).join('');
-            
-            saveData();
+        @media (prefers-color-scheme: dark) {
+            .app-icon { border-color: rgba(255,255,255,0.05); }
         }
 
-        function toggleTask(index) {
-            tasks[index].done = !tasks[index].done;
-            render();
-        }
+        .app-icon-group:active .app-icon { transform: scale(0.9); background-color: rgba(142, 142, 147, 0.2); }
+        
+        .app-name { font-size: 17px; font-weight: 500; color: var(--text-main); text-align: center; }
 
-        function toggleEditMode() {
-            isEditMode = !isEditMode;
-            editToggle.innerText = isEditMode ? 'OK' : 'Editar';
-            render();
-        }
+        .rotina-color { color: #34C759; } 
+        .notas-color { color: #FF9500; }  
 
-        function openModal() {
-            modalOverlay.classList.add('active');
-            setTimeout(() => taskInput.focus(), 100);
-        }
+        /* ========= COMPONENTES GENÉRICOS ========= */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 8px; position: sticky; top: 0; background-color: var(--bg-color); z-index: 10; border-bottom: 1px solid var(--separator); }
+        .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 17px; }
 
-        function closeModal(e) {
-            if (e && e.target !== modalOverlay) return;
-            modalOverlay.classList.remove('active');
-            taskInput.value = '';
-        }
-
-        function addTask() {
-            const text = taskInput.value.trim();
-            if (text) {
-                tasks.push({ text, done: false });
-                closeModal();
-                render();
-            }
-        }
-
-        function deleteTask(index) {
-            tasks.splice(index, 1);
-            if (tasks.length === 0) isEditMode = false;
-            render();
-        }
-
-        function saveData() {
-            localStorage.setItem('ios_routine_tasks', JSON.stringify(tasks));
-        }
-
-        taskInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') addTask();
-        });
-
-        render();
-
-        // Regista o Service Worker para instalar no iPhone
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => {
-                    console.log('SW não registado (normal enquanto não estiver no GitHub)', err);
-                });
-            });
-        }
-    </script>
-</body>
-</html>
+        /* ========= APP ROTINA ========= */
+        .task-list { background-color: var(--card-bg); border-radius: 12px; margin: 16px 20px; overflow: hidden; border: 1px solid var(--separator); }
+        .task-item { display: flex; align-items: center; padding: 16px; border-bottom: 1px solid var(--separator); transition: background-color 0.2s; }
+        .task-item:last-child { border-bottom: none; }
+        .task-item.done { opacity: 0.6; }
+        
+        .checkbox { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--text
