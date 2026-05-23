@@ -107,4 +107,235 @@
         .task-item:last-child { border-bottom: none; }
         .task-item.done { opacity: 0.6; }
         
-        .checkbox { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--text
+        .checkbox { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--text-muted); margin-right: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .task-item.done .checkbox { background-color: var(--accent); border-color: var(--accent); }
+        .task-item.done .checkbox::after { content: '✓'; color: white; font-size: 16px; }
+        
+        .task-text { font-size: 17px; flex-grow: 1; color: var(--text-main); }
+        .task-item.done .task-text { text-decoration: line-through; }
+        
+        /* ========= APP NOTAS ========= */
+        .notes-list { margin: 16px 20px; display: grid; grid-template-columns: 1fr; gap: 12px; }
+        
+        .note-item { background-color: var(--card-bg); border-radius: 10px; padding: 16px; border: 1px solid var(--separator); cursor: pointer; transition: background-color 0.2s; }
+        .note-item:active { background-color: rgba(142, 142, 147, 0.1); }
+        
+        .note-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; color: var(--text-main); }
+        .note-preview { font-size: 14px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* ========= MODAIS / FORMS ========= */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .modal-content { background-color: var(--card-bg); width: 100%; border-radius: 12px 12px 0 0; padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 20px)); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: 600; }
+        .modal-input { width: 100%; padding: 16px; background-color: var(--icon-bg); border: none; border-radius: 10px; font-size: 17px; color: var(--text-main); outline: none; margin-bottom: 12px; }
+        .modal-textarea { height: 200px; resize: none; font-family: inherit; }
+
+        .form-btn { border: none; background: none; color: var(--accent); font-size: 17px; font-weight: 600; padding: 0; cursor: pointer; }
+        .form-btn.danger { color: var(--danger); }
+
+        /* ========= BOTTOM NAV ========= */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background-color: var(--nav-bg); border-top: 1px solid var(--nav-border); display: flex; justify-content: center; align-items: flex-start; padding-top: 10px; padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 50; display: none; }
+        .bottom-nav.visible { display: flex; animation: slideUpNav 0.3s ease-out; }
+        
+        @keyframes slideUpNav { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .nav-home-btn { width: 50px; height: 50px; border-radius: 50%; border: 3px solid var(--text-muted); background: none; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--text-main); transition: 0.2s; cursor: pointer;}
+        .nav-home-btn:active { background-color: rgba(142, 142, 147, 0.2); transform: scale(0.9); }
+
+    </style>
+</head>
+<body>
+
+    <div id="homescreen-view" class="app-view active">
+        <div class="welcome-header">
+            <h1>Bem-vindo!</h1>
+            <p>Near</p>
+        </div>
+        <div class="app-grid">
+            <button class="app-icon-group" onclick="showApp('rotina')">
+                <div class="app-icon rotina-color">▦</div>
+                <div class="app-name">rotina</div>
+            </button>
+            <button class="app-icon-group" onclick="showApp('notas')">
+                <div class="app-icon notas-color">📄</div>
+                <div class="app-name">notas</div>
+            </button>
+        </div>
+    </div>
+
+    <div id="rotina-view" class="app-view">
+        <div class="header">
+            <h1>Rotina Diária</h1>
+            <button class="form-btn" onclick="openModal('task')">+</button>
+        </div>
+        <div id="taskList" class="task-list"></div>
+    </div>
+
+    <div id="notas-view" class="app-view">
+        <div class="header">
+            <h1>Notas</h1>
+            <button class="form-btn" onclick="openModal('note')">+</button>
+        </div>
+        <div id="notesList" class="notes-list"></div>
+    </div>
+
+    <div class="modal-overlay" id="taskModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <button class="form-btn" style="color: var(--text-muted); font-weight: 400;" onclick="closeModal()">Cancelar</button>
+                <span>Nova Tarefa</span>
+                <button class="form-btn" onclick="addTask()">Salvar</button>
+            </div>
+            <input type="text" id="taskInput" class="modal-input" placeholder="Ex: Treino de manhã">
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="noteModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <button class="form-btn" style="color: var(--text-muted); font-weight: 400;" onclick="closeModal()">Cancelar</button>
+                <span id="noteModalTitle">Nota</span>
+                <button class="form-btn" onclick="saveNote()">Guardar</button>
+            </div>
+            <input type="text" id="noteTitleInput" class="modal-input" placeholder="Título da Nota" style="font-weight: 700;">
+            <textarea id="noteContentInput" class="modal-input modal-textarea" placeholder="Escreva a sua nota aqui..."></textarea>
+            <button id="deleteNoteBtn" class="form-btn danger" style="display: none; margin-top: 10px;" onclick="deleteNote()">Apagar Nota</button>
+        </div>
+    </div>
+
+    <div id="bottom-nav" class="bottom-nav">
+        <button class="nav-home-btn" onclick="goHome()">🏠</button>
+    </div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('my_routine_data')) || [];
+        let notes = JSON.parse(localStorage.getItem('my_notes_data')) || [];
+        let editingNoteId = null;
+
+        const views = document.querySelectorAll('.app-view');
+        const bottomNav = document.getElementById('bottom-nav');
+        const taskListEl = document.getElementById('taskList');
+        const notesListEl = document.getElementById('notesList');
+
+        function showApp(app) {
+            views.forEach(v => v.classList.remove('active'));
+            document.getElementById(app + '-view').classList.add('active');
+            bottomNav.classList.add('visible');
+        }
+
+        function goHome() {
+            views.forEach(v => v.classList.remove('active'));
+            document.getElementById('homescreen-view').classList.add('active');
+            bottomNav.classList.remove('visible');
+        }
+
+        function closeModal(e) {
+            if (e && e.target.classList.contains('form-btn')) {} 
+            else if (e && e.target !== document.getElementById('taskModal') && e.target !== document.getElementById('noteModal')) return;
+            
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+            
+            document.getElementById('taskInput').value = '';
+            document.getElementById('noteTitleInput').value = '';
+            document.getElementById('noteContentInput').value = '';
+            editingNoteId = null;
+            document.getElementById('deleteNoteBtn').style.display = 'none';
+        }
+
+        function openModal(type, noteId = null) {
+            if (type === 'task') {
+                document.getElementById('taskModal').classList.add('active');
+                setTimeout(() => document.getElementById('taskInput').focus(), 100);
+            } else if (type === 'note') {
+                document.getElementById('noteModal').classList.add('active');
+                if (noteId) {
+                    editingNoteId = noteId;
+                    const note = notes.find(n => n.id === noteId);
+                    document.getElementById('noteModalTitle').innerText = 'Editar Nota';
+                    document.getElementById('noteTitleInput').value = note.title;
+                    document.getElementById('noteContentInput').value = note.content;
+                    document.getElementById('deleteNoteBtn').style.display = 'block';
+                } else {
+                    document.getElementById('noteModalTitle').innerText = 'Nova Nota';
+                }
+            }
+        }
+
+        function renderTasks() {
+            if (tasks.length === 0) {
+                taskListEl.innerHTML = '<div class="empty-state">Rotina vazia. Toque no <b>+</b>.</div>';
+                return;
+            }
+            taskListEl.innerHTML = tasks.map((t, index) => `
+                <div class="task-item ${t.done ? 'done' : ''}" onclick="toggleTask(${index})">
+                    <div class="checkbox"></div>
+                    <div class="task-text">${t.text}</div>
+                    <span class="danger form-btn" onclick="deleteTask(event, ${index})" style="font-size:14px;">✕</span>
+                </div>
+            `).join('');
+            saveTasks();
+        }
+
+        function addTask() {
+            const text = document.getElementById('taskInput').value.trim();
+            if (text) { tasks.push({ text, done: false }); closeModal(); renderTasks(); }
+        }
+
+        function toggleTask(index) { tasks[index].done = !tasks[index].done; renderTasks(); }
+        function deleteTask(e, index) { e.stopPropagation(); tasks.splice(index, 1); renderTasks(); }
+        function saveTasks() { localStorage.setItem('my_routine_data', JSON.stringify(tasks)); }
+
+        function renderNotes() {
+            if (notes.length === 0) {
+                notesListEl.innerHTML = '<div class="empty-state">Sem notas rápidas. Toque no <b>+</b>.</div>';
+                return;
+            }
+            notesListEl.innerHTML = notes.map(n => `
+                <div class="note-item" onclick="openModal('note', '${n.id}')">
+                    <div class="note-title">${n.title || 'Sem Título'}</div>
+                    <div class="note-preview">${n.content ? n.content.substring(0, 50) : '...'}</div>
+                </div>
+            `).join('');
+            saveNotes();
+        }
+
+        function saveNote() {
+            const title = document.getElementById('noteTitleInput').value.trim();
+            const content = document.getElementById('noteContentInput').value.trim();
+            
+            if (!title && !content) { closeModal(); return; }
+
+            if (editingNoteId) {
+                const index = notes.findIndex(n => n.id === editingNoteId);
+                notes[index].title = title;
+                notes[index].content = content;
+            } else {
+                notes.push({ id: Date.now().toString(), title, content });
+            }
+            
+            closeModal();
+            renderNotes();
+        }
+
+        document.getElementById('taskInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') addTask();
+        });
+
+        function deleteNote() {
+            if (!editingNoteId) return;
+            notes = notes.filter(n => n.id !== editingNoteId);
+            closeModal();
+            renderNotes();
+        }
+
+        function saveNotes() { localStorage.setItem('my_notes_data', JSON.stringify(notes)); }
+
+        renderTasks();
+        renderNotes();
+    </script>
+</body>
+</html>
